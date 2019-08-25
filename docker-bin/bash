@@ -1,0 +1,3 @@
+#!/bin/sh
+
+docker-compose run --rm -e HISTFILE=./tmp/bash_history ${1:-jets} bash

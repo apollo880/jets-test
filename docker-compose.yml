@@ -1,0 +1,52 @@
+version: "3"
+
+services:
+  jets:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    working_dir: /opt/jets-test
+    volumes:
+      - .:/opt/jets-test:cached
+      - data-bundle:/usr/local/bundle
+      - data-node-modules:/opt/jets-test/node_modules
+      - data-tmp-jets:/tmp/jets
+      - ${HOME}/.aws:/root/.aws
+    ports:
+      - "8888:8888"
+    command: ["jets", "server", "--host", "0.0.0.0"]
+    environment:
+      - AWS_ACCESS_KEY_ID
+      - AWS_SECRET_ACCESS_KEY
+      - AWS_REGION
+    depends_on:
+      - dynamodblocal
+
+  dynamodblocal:
+    image: amazon/dynamodb-local
+    volumes:
+      - data-dynamodb:/home/dynamodblocal/data
+    command: ["-jar", "DynamoDBLocal.jar", "-dbPath", "./data", "-port", "8002"]
+    ports:
+      - 8000:8002
+
+  dynamodbadmin:
+    image: instructure/dynamo-local-admin
+    ports:
+      - 8001:8001
+    environment:
+      DYNAMO_ENDPOINT: http://dynamodblocal:8002
+      AWS_REGION: ${AWS_REGION}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+    depends_on:
+      - dynamodblocal
+
+volumes:
+  data-bundle:
+    driver: local
+  data-node-modules:
+    driver: local
+  data-dynamodb:
+    driver: local
+  data-tmp-jets:
+    driver: local
